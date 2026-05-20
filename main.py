@@ -1,7 +1,9 @@
 import os
+from urllib import response
 from google import genai
 from google.genai import errors
 from dotenv import load_dotenv
+from salvar_nota import salvar_nota_obsidian
 
 load_dotenv()
 
@@ -46,6 +48,11 @@ def processar_resumo():
     2. Explique o conteúdo base de forma didática.
     3. Crie uma seção específica chamada "🔥 Foco e Correções" aprofundando as dúvidas do aluno.
     4. No final, adicione 3 tags relevantes (ex: #banco-de-dados).
+
+    REGRA DE SISTEMA CRÍTICA:
+    NÃO inclua NENHUMA saudação, introdução, conclusão ou texto conversacional (como "Aqui está", "Com certeza", etc). 
+    Retorne ÚNICA E EXCLUSIVAMENTE o texto bruto em Markdown. 
+    NÃO envolva a resposta em blocos de código (```markdown), retorne apenas o texto puro.
     """
 
     print("Enviando requisição para a Vertex AI...")
@@ -56,10 +63,12 @@ def processar_resumo():
             contents=prompt
         )
         
-        print("\n✅ Sucesso! Aqui está o resumo gerado:\n")
-        print("-" * 50)
-        print(response.text)
-        print("-" * 50)
+        texto_bruto = response.text
+        
+        texto_limpo = texto_bruto.replace("```markdown", "").replace("```md", "").replace("```", "").strip()
+        
+        salvar_nota_obsidian("Bancos_de_Dados_Relacionais", texto_limpo)
+        print("Processamento concluído com sucesso!")
         
     except errors.APIError as e:
         print(f"❌ Ocorreu um erro na API: {e.message}")
