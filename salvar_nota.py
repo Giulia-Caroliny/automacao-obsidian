@@ -3,7 +3,7 @@ import dotenv
 
 dotenv.load_dotenv()
 
-PASTA_OBSIDIAN = os.getenv("PASTA_DE_DESTINO")
+PASTA_OBSIDIAN = os.getenv("PASTA_OUTPUT")
 
 def salvar_nota_obsidian(titulo, conteudo_markdown):
     os.makedirs(PASTA_OBSIDIAN, exist_ok=True)
