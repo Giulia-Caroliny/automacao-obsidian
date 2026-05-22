@@ -7,10 +7,11 @@ load_dotenv()
 PASTA_PDFS = os.getenv("PASTA_PDFS")
 PASTA_INPUT = os.getenv("PASTA_INPUT")
 
-def deletar_notas(caminho_notas):
-    if caminho_notas and os.path.exists(caminho_notas):
-        os.remove(caminho_notas)
-        print(f"🧹 Arquivo temporário de notas deletado com sucesso.")
+def deletar_notas(lista_caminhos_notas):
+    for caminho in lista_caminhos_notas:
+        if caminho and os.path.exists(caminho):
+            os.remove(caminho)
+            print(f"🧹 Arquivo temporário deletado: {os.path.basename(caminho)}")
 
 def mover_pdf_base(caminho_base):
     if caminho_base and os.path.exists(caminho_base):

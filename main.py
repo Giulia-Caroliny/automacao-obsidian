@@ -77,7 +77,7 @@ def processar_resumo():
             print("Processamento concluído com sucesso!")
 
             limpar_arquivos.mover_pdf_base(item['arquivo_base_original'])
-            limpar_arquivos.deletar_notas(item['arquivo_notas_original'])
+            limpar_arquivos.deletar_notas(item['arquivos_notas_originais'])
             
         except errors.APIError as e:
             print(f"❌ Ocorreu um erro na API: {e.message}")

@@ -38,7 +38,7 @@ def mapear_pasta_estudos(pasta_origem: str) -> list:
     print(f"🔎 Encontrados {len(todos_arquivos)} arquivos na pasta de estudos.")
     for arquivo in todos_arquivos:
         print(f"   - {arquivo}")
-    # 2. Filtra manualmente apenas os que terminam com _base.pdf ou _base.txt
+
     arquivos_base = [
         os.path.join(pasta_origem, arquivo) 
         for arquivo in todos_arquivos 
@@ -60,26 +60,32 @@ def mapear_pasta_estudos(pasta_origem: str) -> list:
         else:
             fonte = "Geral"
             titulo_estudo = titulo_bruto
-            
-        caminho_notas = os.path.join(pasta_origem, f"{titulo_bruto}_notas.txt")
         
         if caminho_base.endswith(".pdf"):
             texto_base = ler_pdf(caminho_base)
         else:
             texto_base = ler_txt(caminho_base)
             
-        texto_notas = ""
-        if os.path.exists(caminho_notas):
-            texto_notas = ler_txt(caminho_notas)
+        textos_notas = []
+        caminhos_notas_originais = []
+        
+        for arquivo in todos_arquivos:
+            if arquivo.startswith(titulo_bruto) and "_notas" in arquivo and arquivo.endswith(".txt"):
+                caminho_nota_encontrada = os.path.join(pasta_origem, arquivo)
+                
+                textos_notas.append(ler_txt(caminho_nota_encontrada))
+                caminhos_notas_originais.append(caminho_nota_encontrada)
+                
+        texto_notas_unificado = "\n\n---\n\n".join(textos_notas)
             
         if texto_base:
             lote_de_estudos.append({
                 "fonte": fonte,
                 "titulo": titulo_estudo.replace("_", " ").title(),
                 "material_base": texto_base,
-                "anotacoes_aluno": texto_notas,
+                "anotacoes_aluno": texto_notas_unificado,
                 "arquivo_base_original": caminho_base,
-                "arquivo_notas_original": caminho_notas
+                "arquivos_notas_originais": caminhos_notas_originais
             })
             
     return lote_de_estudos
