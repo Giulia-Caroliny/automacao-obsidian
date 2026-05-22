@@ -5,6 +5,7 @@ from google.genai import errors
 from dotenv import load_dotenv
 from salvar_nota import salvar_nota_obsidian
 import leitor_arquivos
+import limpar_arquivos
 
 load_dotenv()
 
@@ -74,6 +75,9 @@ def processar_resumo():
             
             salvar_nota_obsidian(item['titulo'], response.text)
             print("Processamento concluído com sucesso!")
+
+            limpar_arquivos.mover_pdf_base(item['arquivo_base_original'])
+            limpar_arquivos.deletar_notas(item['arquivo_notas_original'])
             
         except errors.APIError as e:
             print(f"❌ Ocorreu um erro na API: {e.message}")
