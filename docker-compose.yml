@@ -1,0 +1,18 @@
+services:
+  backend-ai:
+    build: .
+    container_name: pipeline_obsidian_backend
+    env_file:
+      - .env
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credenciais.json
+      
+      - PASTA_INPUT=/app/estudos_processar
+      - PASTA_PDFS=/app/obsidian_pdfs
+      - PASTA_OUTPUT=/app/obsidian_notas
+      
+    volumes:
+      - .:/app
+      - ${PASTA_INPUT}:/app/estudos_processar
+      - ${PASTA_PDFS}:/app/obsidian_pdfs
+      - ${PASTA_OUTPUT}:/app/obsidian_notas
