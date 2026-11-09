@@ -1,20 +1,17 @@
 services:
-  backend-ai:
-    build: .
-    container_name: pipeline_obsidian_backend
-    ports:
-      - "8000:8000"
+  obsidian-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: obsidian-graph-agent
+    restart: unless-stopped
     env_file:
       - .env
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/credenciais.json
-      
-      - PASTA_INPUT=/app/estudos_processar
-      - PASTA_PDFS=/app/obsidian_pdfs
-      - PASTA_OUTPUT=/app/obsidian_notas
-      
+      - INBOX_PATH=/app/data/inbox
+      - PROCESSED_PATH=/app/data/processed
+      - VAULT_PATH=/app/data/vault
     volumes:
-      - .:/app
-      - ${PASTA_INPUT}:/app/estudos_processar
-      - ${PASTA_PDFS}:/app/obsidian_pdfs
-      - ${PASTA_OUTPUT}:/app/obsidian_notas
+      - ${HOST_INBOX_PATH:-./data/inbox}:/app/data/inbox
+      - ${HOST_PROCESSED_PATH:-./data/processed}:/app/data/processed
+      - ${HOST_VAULT_PATH:-./data/vault}:/app/data/vault
