@@ -8,7 +8,11 @@ const envSchema = z.object({
   GEMINI_MODEL: z.string().default('gemini-3.5-flash-lite'),
   INBOX_PATH: z.string().default('/app/data/inbox'),
   PROCESSED_PATH: z.string().default('/app/data/processed'),
-  VAULT_PATH: z.string().default('/app/data/vault')
+  VAULT_PATH: z.string().default('/app/data/vault'),
+  CHOKIDAR_USEPOLLING: z
+    .string()
+    .default('true')
+    .transform((val) => val === 'true'),
 });
 
 export const env = envSchema.parse(process.env);
