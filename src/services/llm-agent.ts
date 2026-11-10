@@ -4,7 +4,6 @@ import { env } from '../config/env';
 import {
   ProcessedNote,
   ProcessedNoteSchema,
-  VaultNoteMetadata,
 } from '../schemas/note.schema';
 
 export class KnowledgeGraphAgent {
@@ -17,7 +16,7 @@ export class KnowledgeGraphAgent {
   async processRawNote(
     rawText: string,
     sourceFileName: string,
-    existingVaultCatalog: VaultNoteMetadata[]
+//    existingVaultCatalog: VaultNoteMetadata[]
   ): Promise<ProcessedNote> {
     const jsonSchema = zodToJsonSchema(ProcessedNoteSchema as any, 'ProcessedNoteSchema');
     const schemaDefinition =
@@ -36,9 +35,6 @@ export class KnowledgeGraphAgent {
 
     const userPrompt = `
         ARQUIVO DE ENTRADA: "${sourceFileName}"
-
-        CATÁLOGO ATUAL DO GRAFO NO OBSIDIAN (${existingVaultCatalog.length} notas):
-        ${JSON.stringify(existingVaultCatalog, null, 2)}
 
         CONTEÚDO BRUTO DA NOTA:
         """

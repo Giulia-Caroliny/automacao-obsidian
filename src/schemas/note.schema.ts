@@ -19,7 +19,7 @@ const wikilinkSchema = (campo: string) =>
     .trim()
     .regex(WIKILINK_REGEX, {
       message: `O campo ${campo} deve estar no formato Wikilink: "[[Título da Nota]]".`,
-    });
+});
 
 export const ProcessedNoteSchema = z.object({
   titulo: z
@@ -79,9 +79,21 @@ export const ProcessedNoteSchema = z.object({
 
 export type ProcessedNote = z.infer<typeof ProcessedNoteSchema>;
 
-export interface VaultNoteMetadata {
+export interface SubGraphNeighbor {
   titulo: string;
-  origem?: string;
-  tags?: string[];
-  resumo?: string;
+  origem: string;
+  tags: string[];
+  resumo: string;
+  relacionados: string[];
+  distancia?: number;
+}
+
+export interface VectorNoteRecord extends Record<string, unknown> {
+  id: string;
+  titulo: string;
+  origem: string;
+  tags_json: string;
+  relacionados_json: string;
+  resumo: string;
+  vector: number[];
 }

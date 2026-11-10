@@ -3,7 +3,6 @@ import fs from 'fs/promises';
 import path from 'path';
 import { env } from './config/env';
 import { FileExtractor } from './services/extractor';
-import { VaultIndexer } from './services/vault-indexer';
 import { KnowledgeGraphAgent } from './services/llm-agent';
 import { VaultWriter } from './services/vault-writer';
 
@@ -12,7 +11,6 @@ async function bootstrap() {
   await fs.mkdir(env.PROCESSED_PATH, { recursive: true });
   await fs.mkdir(env.VAULT_PATH, { recursive: true });
 
-  const indexer = new VaultIndexer(env.VAULT_PATH);
   const agent = new KnowledgeGraphAgent();
   const writer = new VaultWriter(env.VAULT_PATH, env.PROCESSED_PATH);
 
@@ -34,20 +32,16 @@ async function bootstrap() {
         return;
       }
 
-      console.log(`[2/4] Escaneando índice do grafo no Obsidian Vault...`);
-      const catalog = await indexer.getGraphCatalog();
-      console.log(`      -> ${catalog.length} notas existentes mapeadas.`);
+//     console.log(`[3/4] Processando resumo e conexões via Gemini (${env.GEMINI_MODEL})...`);
+//      const structuredNote = await agent.processRawNote(
+//        rawText,
+//        fileName,
+//       catalog
+//      );
 
-      console.log(`[3/4] Processando resumo e conexões via Gemini (${env.GEMINI_MODEL})...`);
-      const structuredNote = await agent.processRawNote(
-        rawText,
-        fileName,
-        catalog
-      );
-
-      console.log(`[4/4] Gravando nota no Vault [Origem: ${structuredNote.origem}]...`);
-      const savedPath = await writer.saveToVault(structuredNote, filePath);
-      console.log(`[Sucesso] Nota criada em: ${savedPath}`);
+//      console.log(`[4/4] Gravando nota no Vault [Origem: ${structuredNote.origem}]...`);
+//      const savedPath = await writer.saveToVault(structuredNote, filePath);
+//      console.log(`[Sucesso] Nota criada em: ${savedPath}`);
     } catch (error) {
       console.error(`[Erro] Falha ao processar ${fileName}:`, error);
     }
