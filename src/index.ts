@@ -3,6 +3,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { env } from './config/env';
 import { FileExtractor } from './services/extractor';
+import { EmbeddingService } from './services/embedding';
+import { VaultVectorStore } from './services/vector-store';
 import { KnowledgeGraphAgent } from './services/llm-agent';
 import { VaultWriter } from './services/vault-writer';
 
@@ -10,9 +12,21 @@ async function bootstrap() {
   await fs.mkdir(env.INBOX_PATH, { recursive: true });
   await fs.mkdir(env.PROCESSED_PATH, { recursive: true });
   await fs.mkdir(env.VAULT_PATH, { recursive: true });
+  await fs.mkdir(env.LANCEDB_PATH, { recursive: true });
 
+  const embeddingService = new EmbeddingService();
+  const vectorStore = new VaultVectorStore(
+    env.LANCEDB_PATH,
+    env.VAULT_PATH,
+    embeddingService
+  );
   const agent = new KnowledgeGraphAgent();
   const writer = new VaultWriter(env.VAULT_PATH, env.PROCESSED_PATH);
+
+  console.log('[Init] Inicializando LanceDB e sincronizando Vault existente...');
+  await vectorStore.initializeAndSync();
+
+  await vectorStore.inspect();
 
   let processingQueue = Promise.resolve();
 
@@ -31,6 +45,8 @@ async function bootstrap() {
         console.warn(`[Aviso] O arquivo ${fileName} está vazio. Ignorando.`);
         return;
       }
+
+      
 
 //     console.log(`[3/4] Processando resumo e conexões via Gemini (${env.GEMINI_MODEL})...`);
 //      const structuredNote = await agent.processRawNote(
