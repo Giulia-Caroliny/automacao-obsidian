@@ -3,15 +3,18 @@ import fs from 'fs/promises';
 import path from 'path';
 import { env } from './config/env';
 import { FileExtractor } from './services/extractor';
+import { VaultIndexer } from './services/vault-indexer';
 
 async function bootstrap() {
   await fs.mkdir(env.INBOX_PATH, { recursive: true });
   await fs.mkdir(env.PROCESSED_PATH, { recursive: true });
   await fs.mkdir(env.VAULT_PATH, { recursive: true });
 
-    let processingQueue = Promise.resolve();
+  const indexer = new VaultIndexer(env.VAULT_PATH);
 
-    const handleNewFile = async (filePath: string) => {
+  let processingQueue = Promise.resolve();
+
+  const handleNewFile = async (filePath: string) => {
     const fileName = path.basename(filePath);
 
     if (fileName.startsWith('.') || !FileExtractor.isSupported(filePath)) {
@@ -19,26 +22,17 @@ async function bootstrap() {
     }
 
     try {
-      console.log(`\n Iniciando leitura de: ${fileName}`);
+      console.log(`\n[1/4] Iniciando leitura de: ${fileName}`);
       const rawText = await FileExtractor.extractText(filePath);
-
-      if (typeof rawText !== 'string') {
-        console.error(`❌ [Erro] Retorno não é string! Tipo recebido: ${typeof rawText}`);
-        return;
-      }
 
       if (!rawText.trim()) {
         console.warn(`[Aviso] O arquivo ${fileName} está vazio. Ignorando.`);
         return;
       }
 
-      console.log(`✅ [Sucesso] Lido com sucesso!`);
-      console.log(`   - Tipo: ${typeof rawText}`);
-      console.log(`   - Caracteres totais: ${rawText.length}`);
-      console.log(`   - Prévia (primeiros 150 caracteres):`);
-      console.log('--- INÍCIO DA PRÉVIA ---');
-      console.log(rawText.slice(0, 150).trim());
-      console.log('--- FIM DA PRÉVIA ---\n');
+      console.log(`[2/4] Escaneando índice do grafo no Obsidian Vault...`);
+      const catalog = await indexer.getGraphCatalog();
+      console.log(`      -> ${catalog.length} notas existentes mapeadas.`);
 
     } catch (error) {
       console.error(`[Erro] Falha ao processar ${fileName}:`, error);

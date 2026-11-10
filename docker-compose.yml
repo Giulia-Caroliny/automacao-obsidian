@@ -11,6 +11,7 @@ services:
       - INBOX_PATH=/app/data/inbox
       - PROCESSED_PATH=/app/data/processed
       - VAULT_PATH=/app/data/vault
+      - CHOKIDAR_USEPOLLING=true
     volumes:
       - ${HOST_INBOX_PATH:-./data/inbox}:/app/data/inbox
       - ${HOST_PROCESSED_PATH:-./data/processed}:/app/data/processed
