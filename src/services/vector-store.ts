@@ -5,6 +5,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { EmbeddingService } from './embedding';
 import {
+  ProcessedNote,
   SubGraphNeighbor,
   VectorNoteRecord,
 } from '../schemas/note.schema';
@@ -35,7 +36,13 @@ export class VaultVectorStore {
   private async syncExistingVaultNotes(): Promise<void> {
     const markdownFiles = await fg('**/*.md', {
       cwd: this.vaultPath,
-      ignore: ['.obsidian/**', '.trash/**', 'templates/**'],
+      ignore: [
+        '**/.obsidian/**',
+        '**/.trash/**',
+        '**/templates/**',
+        '**/inbox/**',
+        '**/processados/**',
+      ],
       absolute: true,
     });
 
@@ -55,6 +62,16 @@ export class VaultVectorStore {
     const newRecords: VectorNoteRecord[] = [];
 
     for (const filePath of markdownFiles) {
+      const normalizedPath = filePath.replace(/\\/g, '/');
+      if (
+        normalizedPath.includes('/processados/') ||
+        normalizedPath.includes('/inbox/') ||
+        normalizedPath.includes('/.obsidian/') ||
+        normalizedPath.includes('/.trash/')
+      ) {
+        continue;
+      }
+
       const fileName = path.basename(filePath, '.md');
       if (indexedIds.has(fileName)) continue;
 
@@ -63,6 +80,11 @@ export class VaultVectorStore {
         const { data, content } = matter(rawFile);
 
         const titulo = String(data.titulo || fileName);
+
+        if (indexedIds.has(titulo) || indexedIds.has(fileName)) {
+          continue;
+        }
+        
         const origem = String(data.origem || 'Desconhecida');
         const tags = Array.isArray(data.tags) ? data.tags.map(String) : [];
         const relacionados = Array.isArray(data.relacionados)
@@ -127,7 +149,35 @@ export class VaultVectorStore {
     }));
   }
 
-  async inspect(limit: number = 5): Promise<void> {
+  async upsertProcessedNote(note: ProcessedNote): Promise<void> {
+    const relacionados = [
+      ...new Set([...note.links_existentes, ...note.novos_conceitos]),
+    ];
+
+    const textToEmbed = `Título: ${note.titulo}\nOrigem: ${note.origem}\nTags: ${note.tags.join(', ')}\nResumo: ${note.resumo_executivo}\nConceitos: ${relacionados.join(', ')}\nConteúdo: ${note.conteudo_markdown.slice(0, 2000)}`;
+    const vector = await this.embeddingService.generateEmbedding(textToEmbed);
+
+    const record: VectorNoteRecord = {
+      id: note.titulo,
+      titulo: note.titulo,
+      origem: note.origem,
+      tags_json: JSON.stringify(note.tags),
+      relacionados_json: JSON.stringify(relacionados),
+      resumo: note.resumo_executivo,
+      vector,
+    };
+
+    if (!this.table) {
+      this.table = await this.db.createTable(this.tableName, [record]);
+      return;
+    }
+
+    const escapedId = note.titulo.replace(/'/g, "''");
+    await this.table.delete(`id = '${escapedId}'`);
+    await this.table.add([record]);
+  }
+
+  async inspect(limit: number = 15): Promise<void> {
     if (!this.table) {
       console.log('[LanceDB] Tabela não inicializada ou ainda sem dados.');
       return;

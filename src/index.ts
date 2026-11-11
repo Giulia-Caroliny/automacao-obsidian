@@ -38,7 +38,7 @@ async function bootstrap() {
     }
 
     try {
-      console.log(`\n[1/4] Iniciando leitura de: ${fileName}`);
+      console.log(`\n[1/5] Iniciando leitura de: ${fileName}`);
       const rawText = await FileExtractor.extractText(filePath);
 
     if (!rawText.trim()) {
@@ -46,25 +46,32 @@ async function bootstrap() {
     return;
     }
 
-    console.log(`[2/4] Buscando Top-${env.TOP_K_NEIGHBORS} notas semanticamente próximas no LanceDB...`);
+    console.log(`[2/5] Buscando Top-${env.TOP_K_NEIGHBORS} notas semanticamente próximas no LanceDB...`);
     const neighbors = await vectorStore.searchTopKNeighbors(
     rawText,
     env.TOP_K_NEIGHBORS
     );
 
-    console.log(neighbors);
-      
+    console.log(
+    `      → ${neighbors.length} notas vizinhas recuperadas: ${neighbors
+        .map((n) => `"${n.titulo}"`)
+        .join(', ') || 'Nenhuma (Vault inicial)'}`
+    );
 
-//     console.log(`[3/4] Processando resumo e conexões via Gemini (${env.GEMINI_MODEL})...`);
-//      const structuredNote = await agent.processRawNote(
-//        rawText,
-//        fileName,
-//       catalog
-//      );
+    console.log(`[3/5] Sintetizando nota e conexões do grafo via Gemini (${env.GEMINI_MODEL})...`);
+    const structuredNote = await agent.processRawNote(
+    rawText,
+    fileName,
+    neighbors
+    );
+    
+    console.log(`[4/5] Salvando nota no Obsidian Vault [Origem: ${structuredNote.origem}]...`);
+    const savedPath = await writer.saveToVault(structuredNote, filePath);
 
-//      console.log(`[4/4] Gravando nota no Vault [Origem: ${structuredNote.origem}]...`);
-//      const savedPath = await writer.saveToVault(structuredNote, filePath);
-//      console.log(`[Sucesso] Nota criada em: ${savedPath}`);
+    console.log(`[5/5] Atualizando índice vetorial no LanceDB para "${structuredNote.titulo}"...`);
+    await vectorStore.upsertProcessedNote(structuredNote);
+
+    console.log(`[Sucesso] Pipeline concluído! Arquivo salvo em: ${savedPath}`);
     } catch (error) {
       console.error(`[Erro] Falha ao processar ${fileName}:`, error);
     }
