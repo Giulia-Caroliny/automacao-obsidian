@@ -5,6 +5,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { EmbeddingService } from './embedding';
 import {
+  SubGraphNeighbor,
   VectorNoteRecord,
 } from '../schemas/note.schema';
 
@@ -100,6 +101,30 @@ export class VaultVectorStore {
     } else {
       console.log(`[LanceDB Sync] Índice vetorial já está 100% sincronizado (${indexedIds.size} notas).`);
     }
+  }
+
+  async searchTopKNeighbors(
+    rawText: string,
+    topK: number
+  ): Promise<SubGraphNeighbor[]> {
+    if (!this.table) {
+      return [];
+    }
+
+    const queryVector = await this.embeddingService.generateEmbedding(rawText);
+    const results = await this.table
+      .vectorSearch(queryVector)
+      .limit(topK)
+      .toArray();
+
+    return results.map((row) => ({
+      titulo: String(row.titulo),
+      origem: String(row.origem),
+      tags: JSON.parse(String(row.tags_json || '[]')),
+      relacionados: JSON.parse(String(row.relacionados_json || '[]')),
+      resumo: String(row.resumo),
+      distancia: typeof row._distance === 'number' ? Number(row._distance.toFixed(4)) : undefined,
+    }));
   }
 
   async inspect(limit: number = 5): Promise<void> {

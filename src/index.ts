@@ -41,11 +41,18 @@ async function bootstrap() {
       console.log(`\n[1/4] Iniciando leitura de: ${fileName}`);
       const rawText = await FileExtractor.extractText(filePath);
 
-      if (!rawText.trim()) {
-        console.warn(`[Aviso] O arquivo ${fileName} está vazio. Ignorando.`);
-        return;
-      }
+    if (!rawText.trim()) {
+    console.warn(`[Aviso] O arquivo ${fileName} está vazio. Ignorando.`);
+    return;
+    }
 
+    console.log(`[2/4] Buscando Top-${env.TOP_K_NEIGHBORS} notas semanticamente próximas no LanceDB...`);
+    const neighbors = await vectorStore.searchTopKNeighbors(
+    rawText,
+    env.TOP_K_NEIGHBORS
+    );
+
+    console.log(neighbors);
       
 
 //     console.log(`[3/4] Processando resumo e conexões via Gemini (${env.GEMINI_MODEL})...`);
