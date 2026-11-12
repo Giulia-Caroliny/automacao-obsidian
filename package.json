@@ -1,6 +1,6 @@
 {
   "name": "obsidian-graph-agent",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Event-driven AI Agent for Obsidian Knowledge Graph automation",
   "main": "dist/index.js",
   "scripts": {

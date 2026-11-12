@@ -48,18 +48,35 @@ O **Obsidian GraphRAG Agent** atua como um daemon em background que monitora uma
 
 Para garantir confiabilidade de produção e medir regressões de prompt, o projeto conta com uma suíte de avaliação automatizada (`src/eval/run-eval.ts`) sobre um *Golden Dataset* reproduzível, combinando **métricas determinísticas de grafo** e **avaliação semântica via LLM-as-a-Judge** (`temperature: 0.0`).
 
-### Resumo Global de Performance
+### Resumo Global de Performance (Versão: 2.0.0)
 
 | Métrica                               | Tipo de Avaliação                 | Resultado Médio | Meta de Produção | Descrição Técnica                                                                                          |
 | :------------------------------------ | :-------------------------------- | :-------------: | :--------------: | :--------------------------------------------------------------------------------------------------------- |
-| **Origin Classification Accuracy**    | Determinístico (Exact Match)      |                 |     >= 95.0%     | Precisão na classificação da origem (`Concurso`, `Certificacao_AWS`, `Pos_Graduacao_1`, etc.).             |
-| **Sub-Graph Link Groundedness**       | Determinístico (Anti-Alucinação)  |                 |     >= 95.0%     | Proporção de `links_existentes` gerados que de fato pertencem ao sub-grafo Top-$K$ retornado pelo LanceDB. |
-| **Link Discovery Precision**          | Determinístico (Gabarito Top-$K$) |                 |     >= 80.0%     | Precisão dos links recuperados frente às conexões esperadas no gabarito.                                   |
-| **Link Discovery Recall**             | Determinístico (Gabarito Top-$K$) |                 |     >= 80.0%     | Cobertura das conexões esperadas no sub-grafo inter-domínio.                                               |
-| **Faithfulness (Fidelidade Factual)** | LLM-as-a-Judge (0.0 - 1.0)        |                 |     >= 90.0%     | Ausência de alucinações ou distorções conceituais em relação à nota bruta.                                 |
-| **Concept Coverage (Retenção)**       | LLM-as-a-Judge (0.0 - 1.0)        |                 |     >= 90.0%     | Preservação integral dos fatos técnicos essenciais (*Key Facts*) após a síntese.                           |
-| **New Concept Atomicity**             | LLM-as-a-Judge (0.0 - 1.0)        |                 |     >= 85.0%     | Qualidade e especificidade dos `novos_conceitos` criados para expansão saudável do grafo.                  |
-| **Latência Média End-to-End**         | Telemetria de Sistema             |                 |    <= 5000 ms    | Tempo médio por nota (Embedding + Busca Vetorial + Geração Estruturada).                                   |
+| **Origin Classification Accuracy**    | Determinístico (Exact Match)      |      90.0%      |     >= 95.0%     | Precisão na classificação da origem (`Concurso`, `Certificacao_AWS`, `Pos_Graduacao_1`, etc.).             |
+| **Sub-Graph Link Groundedness**       | Determinístico (Anti-Alucinação)  |     100.0%      |     >= 95.0%     | Proporção de `links_existentes` gerados que de fato pertencem ao sub-grafo Top-$K$ retornado pelo LanceDB. |
+| **Link Discovery Precision**          | Determinístico (Gabarito Top-$K$) |      95.0%      |     >= 80.0%     | Precisão dos links recuperados frente às conexões esperadas no gabarito.                                   |
+| **Link Discovery Recall**             | Determinístico (Gabarito Top-$K$) |      58.8%      |     >= 80.0%     | Cobertura das conexões esperadas no sub-grafo inter-domínio.                                               |
+| **Faithfulness (Fidelidade Factual)** | LLM-as-a-Judge (0.0 - 1.0)        |      99.5%      |     >= 90.0%     | Ausência de alucinações ou distorções conceituais em relação à nota bruta.                                 |
+| **Concept Coverage (Retenção)**       | LLM-as-a-Judge (0.0 - 1.0)        |     100.0%      |     >= 90.0%     | Preservação integral dos fatos técnicos essenciais (*Key Facts*) após a síntese.                           |
+| **New Concept Atomicity**             | LLM-as-a-Judge (0.0 - 1.0)        |      91.0%      |     >= 85.0%     | Qualidade e especificidade dos `novos_conceitos` criados para expansão saudável do grafo.                  |
+| **Latência Média End-to-End**         | Telemetria de Sistema             |     3619 ms     |    <= 5000 ms    | Tempo médio por nota (Embedding + Busca Vetorial + Geração Estruturada).                                   |
+
+
+### Detalhamento por Caso de Teste (Golden Dataset)
+
+| Caso               | Origem Prevista                                      | Groundedness | Link Recall | Faithfulness | Coverage | Crítica do Juiz (LLM-as-a-Judge)                                                                                                                                            |
+| :----------------- | :--------------------------------------------------- | :----------: | :---------: | :----------: | :------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `case_aws_01`      | `Certificacao_AWS` ✅                                 |    100.0%    |    66.7%    |    100.0%    |  100.0%  | Totalmente fiel ao texto bruto e com alto rigor técnico; gera bons conceitos para o grafo, embora `AWS STS AssumeRole` carregue uma ação acoplada.                          |
+| `case_aws_02`      | `Certificacao_AWS` ✅                                 |    100.0%    |    50.0%    |    95.0%     |  100.0%  | Excelente profundidade e formatação, preservando todos os fatos essenciais; a maioria dos conceitos é atômica, com poucos wikilinks estendidos além do termo ideal.         |
+| `case_concurso_01` | `Concurso` ✅                                         |    100.0%    |    50.0%    |    100.0%    |  100.0%  | Fiel ao texto bruto e bem organizado; extrai conceitos técnicos precisos, mas gerou apenas dois nós diante de outros conceitos relevantes presentes na base.                |
+| `case_concurso_02` | `Concurso` ✅                                         |    100.0%    |    40.0%    |    100.0%    |  100.0%  | Perfeitamente fiel ao rascunho original, cobrindo os fatos essenciais com profundidade e gerando conceitos atômicos excelentes para o grafo do Obsidian.                    |
+| `case_pos1_01`     | `Pos_Graduacao_1` ✅ |    100.0%    |    66.7%    |    100.0%    |  100.0%  | Totalmente fiel ao texto original, cobre todos os fatos essenciais com precisão e utiliza conceitos atômicos específicos e altamente reutilizáveis.                         |
+| `case_pos1_02`     | `Pos_Graduacao_1` ✅ |    100.0%    |    66.7%    |    100.0%    |  100.0%  | Extremamente fiel e completo na retenção dos fatos esperados, estruturando conceitos atômicos e relevantes para a topologia do grafo.                                       |
+| `case_pos2_01`     | `Pos_Graduacao_2` ✅          |    100.0%    |    40.0%    |    100.0%    |  100.0%  | Totalmente fiel à origem e preciso na cobertura dos fatos; gera conceitos atômicos relevantes, apresentando apenas leves variações lexicais nos wikilinks.                  |
+| `case_pos2_02`     | `Pos_Graduacao_2` ✅          |    100.0%    |    75.0%    |    100.0%    |  100.0%  | Cobertura exaustiva e fiel de todos os fatos essenciais do texto bruto, com conceitos atômicos de alta qualidade perfeitamente alinhados ao grafo.                          |
+| `case_artigo_01`   | `Pos_Graduacao_1` ❌ |    100.0%    |    66.7%    |    100.0%    |  100.0%  | Alta fidelidade e cobertura total dos fatos, mas classificou a origem incorretamente e introduziu um conceito composto não atômico (`Otimização de Inferência e KV Cache`). |
+| `case_artigo_02`   | `Artigo_Externo` ✅                                   |    100.0%    |    66.7%    |    100.0%    |  100.0%  | Totalmente fiel ao texto de origem e preciso na cobertura dos fatos essenciais, produzindo conceitos atômicos bem formatados para o Obsidian.                               |
+
 
 ---
 
@@ -119,7 +136,7 @@ HOST_INBOX_PATH=./meus_resumos/inbox
 HOST_PROCESSED_PATH=./meus_resumos/processados
 HOST_VAULT_PATH=/caminho/absoluto/para/seu/ObsidianVault
 
-EMBEDDING_MODEL=text-embedding-004
+EMBEDDING_MODEL=gemini-embedding-001
 TOP_K_NEIGHBORS=10
 HOST_LANCEDB_PATH=./data/lancedb
 ```
@@ -132,7 +149,21 @@ Suba o serviço em background com build automatizado:
 docker compose up -d --build
 ```
 
-Para testar, adicione qualquer arquivo `.txt`, `.md` ou `.docx` na pasta configurada em `HOST_INBOX_PATH`. O agente irá extrair o conteúdo, consultar os vizinhos no LanceDB, gerar a nota formatada na subpasta correspondente do seu Obsidian Vault e arquivar o original em `HOST_PROCESSED_PATH`.
+Para testar, adicione qualquer arquivo `.txt`, `.md`, `.docx` ou `.pdf` na pasta configurada em `HOST_INBOX_PATH`. O agente irá extrair o conteúdo, consultar os vizinhos no LanceDB, gerar a nota formatada na subpasta correspondente do seu Obsidian Vault e arquivar o original em `HOST_PROCESSED_PATH`.
+
+### 3. Executando a Suíte de Avaliação (Benchmark)
+
+Para reproduzir as métricas da tabela acima e regerar o arquivo `EVAL_REPORT.md`:
+
+```bash
+docker cp oexec -it obsidian-graph-agent node dist/eval/run-eval.js
+```
+
+Para fazer a cópia do arquivo `EVAL_REPORT.md` para a pasta do projeto:
+
+```bash
+docker cp ocp obsidian-graph-agent:/app/EVAL_REPORT.md ./EVAL_REPORT.md
+```
 
 ---
 
@@ -140,5 +171,5 @@ Para testar, adicione qualquer arquivo `.txt`, `.md` ou `.docx` na pasta configu
 
 - [x] **Fase 1:** Daemon Event-Driven (`chokidar`), parsers multi-formato e saída estruturada com `Zod`.
 - [x] **Fase 2:** Motor **2-Hop GraphRAG** embarcado com `@lancedb/lancedb`, sincronização incremental de *cold-start* e containerização Debian Slim.
-- [ ] **Fase 3.1:** Pipeline de avaliação híbrida (**Determinístico + LLM-as-a-Judge**) com geração automatizada de relatórios.
+- [X] **Fase 3.1:** Pipeline de avaliação híbrida (**Determinístico + LLM-as-a-Judge**) com geração automatizada de relatórios.
 - [ ] **Fase 3.2 (CI/CD Quality Gate):** GitHub Actions executando testes unitários com `Vitest` e validação de regressão de `Sub-Graph Link Groundedness` a cada Pull Request.

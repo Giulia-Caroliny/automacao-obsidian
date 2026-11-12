@@ -7,6 +7,7 @@ const HIERARCHICAL_TAG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0
 const OBSIDIAN_INVALID_CHARS_REGEX = /[\\/*?":<>|#^\[\]]/;
 
 export const KnowledgeOriginEnum = z.enum([
+  'Concurso',
   'Pos_Graduacao_1_Engenharia_de_IA_Cruzeiro_do_Sul',
   'Pos_Graduacao_2_Engenharia_de_IA_UNIPDS',
   'Certificacao_AWS',
